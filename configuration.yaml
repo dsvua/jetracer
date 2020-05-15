@@ -1,0 +1,13 @@
+%YAML:1.0
+---
+camera_width: 848
+camera_height: 480
+camera_fps: 90
+frames_to_skip: 30
+left_gap: 60
+bottom_gap: 50
+min_obstacle_height: 5
+max_obstacle_height: 250
+client_port: 9000
+listen_port: 5000
+wait_for_thread: 1000000

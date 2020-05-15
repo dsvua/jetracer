@@ -18,6 +18,9 @@ namespace Jetracer {
         // rs2::device selected_device = pipeline_profile.get_device();
         // rs2::depth_sensor depth_sensor = selected_device.first<rs2::depth_sensor>();
         // depth_sensor.set_option(RS2_OPTION_EMITTER_ON_OFF, 1);
+        auto stream = _pipeline_profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
+        auto intrinsics = stream.get_intrinsics(); // Calibration data
+        _ctx->jetson_camera_intrinsics = intrinsics;
         std::cout << "Camera thread is initialized" << std::endl;
         return true;
     }

@@ -10,17 +10,18 @@ namespace Jetracer {
 
     typedef struct
     {
-        unsigned int cam_w = 848;
-        unsigned int cam_h = 480;
-        unsigned int fps = 90;
-        unsigned int frames_to_skip = 30; // discard all frames until start_frame to
+        int cam_w = 848;
+        int cam_h = 480;
+        int fps = 90;
+        int frames_to_skip = 30; // discard all frames until start_frame to
                                        // give autoexposure, etc. a chance to settle
-        unsigned int left_gap = 60; // ignore left 60 pixels on depth image as they
+        int left_gap = 60; // ignore left 60 pixels on depth image as they
                                     // usually have 0 distance and useless
-        unsigned int bottom_gap = 50; // ignore bottom 50 pixels on depth image
+        int bottom_gap = 50; // ignore bottom 50 pixels on depth image
+        // unsigned int bottom_gap = 50; // ignore bottom 50 pixels on depth image
 
-        unsigned int min_obstacle_height = 5; // ignore obstacles lower then 5mm
-        unsigned int max_obstacle_height = 250; // ignore everything higher then 25cm
+        int min_obstacle_height = 5; // ignore obstacles lower then 5mm
+        int max_obstacle_height = 250; // ignore everything higher then 25cm
                                         // as car is not that tall
 
         rs2::frame_queue* depth_queue;
@@ -31,7 +32,7 @@ namespace Jetracer {
         std::string client_ip_address; // address of desktop/laptop that controls car
         int client_port = 9000; // port for video streaming/gstreamer that listens on control host
         int listen_port = 5000; // port to listen for commands
-        useconds_t wait_for_thread = 1 * 1000000; // wait for 1 sec for thread to start
+        int wait_for_thread = 1 * 1000000; // wait for 1 sec for thread to start
 
     } context_t;
 
