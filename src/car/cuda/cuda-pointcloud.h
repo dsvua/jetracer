@@ -2,9 +2,8 @@
 #define JETRACER_CUDA_POINTCLOUD_H
 
 #include <librealsense2/rs.hpp>
-#include "cuda_utils.h"
 #include "assert.h"
-// #include <functional>
+
 // CUDA headers
 #include <cuda_runtime.h>
 
