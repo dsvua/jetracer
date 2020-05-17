@@ -5,6 +5,8 @@
 #include "Ordered.h"
 #include <cuda.h>
 #include <librealsense2/rs.hpp>
+#include <functional>
+#include <pthread.h>
 
 namespace Jetracer {
 
@@ -14,14 +16,14 @@ namespace Jetracer {
         int cam_h = 480;
         int fps = 90;
         int frames_to_skip = 30; // discard all frames until start_frame to
-                                       // give autoexposure, etc. a chance to settle
-        int left_gap = 60; // ignore left 60 pixels on depth image as they
-                                    // usually have 0 distance and useless
+                                 // give autoexposure, etc. a chance to settle
+        int left_gap = 60;  // ignore left 60 pixels on depth image as they
+                            // usually have 0 distance and useless
         int bottom_gap = 50; // ignore bottom 50 pixels on depth image
         // unsigned int bottom_gap = 50; // ignore bottom 50 pixels on depth image
 
         int min_obstacle_height = 5; // ignore obstacles lower then 5mm
-        int max_obstacle_height = 250; // ignore everything higher then 25cm
+        int max_obstacle_height = 250;  // ignore everything higher then 25cm
                                         // as car is not that tall
 
         rs2::frame_queue* depth_queue;
@@ -34,7 +36,25 @@ namespace Jetracer {
         int listen_port = 5000; // port to listen for commands
         int wait_for_thread = 1 * 1000000; // wait for 1 sec for thread to start
 
+        std::function<bool(pEvent)> pushEvent;
+        std::function<bool(EventType, pthread_t, std::function<bool(pEvent)>)> subscribeForEvent;
+        std::function<bool(EventType, pthread_t)> unSubscribeFromEvent;
+
     } context_t;
+
+    enum class EventType {
+        event_new_ir_frame,
+        event_new_depth_frame,
+        event_new_net_command,
+        event_stop_thread,
+    }
+
+    class BaseEvent {
+    public:
+        EventType event_type;
+    }
+
+    typedef std::shared_ptr<BaseEvent> pEvent; // p - means pointer
 
 } // namespace Jetracer
 

@@ -13,15 +13,16 @@ namespace Jetracer {
     public:
         explicit EventsThread() {}
         ~EventsThread() {}
+        bool pushEvent(pEvent event);
     protected:
-        bool threadExecute() final;
-        bool threadInitialize() override;
-        bool threadShutdown() override;
+        virtual bool processEvent(pEvent event) = 0;
+        virtual bool threadInitialize() = 0;
+        virtual bool threadShutdown() = 0;
     private:
-        context_t * _ctx;
-        rs2::config _config;
-        rs2::pipeline _pipeline;
-        rs2::pipeline_profile _pipeline_profile;
+        bool threadExecute() final;
+        std::queue<pEvent> m_queue;
+        std::mutex m_mutex;
+        std::condition_variable m_cv;
     };
 } // namespace Jetracer
 
