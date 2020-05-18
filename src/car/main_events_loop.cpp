@@ -1,9 +1,4 @@
-
 #include "main_events_loop.h"
-#include <iostream>
-#include "realsense_camera.h"
-#include "image_pipeline.h"
-#include "communication.h"
 
 namespace Jetracer {
 
@@ -30,10 +25,21 @@ namespace Jetracer {
         }
         _ctx->unSubscribeFromEvent = unSubscribeFromEventCallback;
 
-        // start image processing pipeline
-        Jetracer::imagePipelineThread jetracer_image_pipeline(_ctx);
-        jetracer_image_pipeline.initialize();
-        jetracer_image_pipeline.waitRunning(_ctx->wait_for_thread);
+        // start camera - it should work all times
+        jetracer_realsense_camera = new Jetracer::realsenseD435iThread(_ctx);
+        jetracer_realsense_camera.initialize();
+        jetracer_realsense_camera.waitRunning(_ctx->wait_for_thread);
+
+        // start communication - it should work all times
+        jetracer_communication = new Jetracer::communicationThread(_ctx);
+        jetracer_communication.initialize();
+        jetracer_communication.waitRunning(_ctx->wait_for_thread);
+
+        // start servo control - it should work all times
+        jetracer_servo_control = new Jetracer::servoControlThread(_ctx);
+        jetracer_servo_control.initialize();
+        jetracer_servo_control.waitRunning(_ctx->wait_for_thread);
+
         return true;
     }
 
@@ -42,17 +48,35 @@ namespace Jetracer {
         return true;
     }
 
-    bool processEvents(pEvent event) {
+    bool MainEventsLoopThread::processEvents(pEvent event) {
+
+        std::unique_lock<std::mutex> lk(m_mutex_subscribers);
 
         switch (event->event_type) {
-            case event_stop_thread: {
-                shutdown();
+            case event_video_streaming_update: {
+                if (event->do_stream){
+                    startVideo();
+                } else {
+                    stopVideo();
+                }
+            }
+            else {
+                for (auto& subscriber: subscribers[event->event_type]) {
+                    std::function<bool(pEvent)> pushEventToSubscriber = subscriber.second;
+                    pushEventToSubscriber(event);
+                }                
             }
         }
+
+        if (event->event_type == event_stop_thread) {
+            stopVideo();
+            shutdown();            
+        }
+
         return true;
     }
 
-    // this function is used to compare pthread_t ids in map
+    // this function is used to compare pthread_t's in map
     bool MainEventsLoopThread::pthreadComparison(const pthread_t &a, const pthread_t &b)
     {
         return memcmp(&a, &b, sizeof(pthread_t)) < 0;
@@ -74,5 +98,16 @@ namespace Jetracer {
         subscribers[_event].erase(_thread_id);
         return true
     }
+
+    void MainEventsLoopThread::startVideo(){
+        jetracer_video_stream = new videoStreamThread(_ctx);
+        jetracer_video_stream->initialize();
+        jetracer_video_stream->waitRunning();
+    }
+
+    void MainEventsLoopThread::stopVideo(){
+        jetracer_video_stream->shutdown();
+    }
+
 
 }

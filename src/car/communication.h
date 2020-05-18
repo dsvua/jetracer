@@ -5,7 +5,6 @@
 #include "Thread.h"
 #include "constants.h"
 #include "types.h"
-#include "video_stream.h"
 #include <string.h>
 #include <stdlib.h>
 #include <sstream>
@@ -38,14 +37,11 @@ namespace Jetracer {
         std::string getMessage();
         bool getIncomingConnection();
         void parseMessage(std::string message);
-        void startVideo();
-        void stopVideo();
 
     private:
         virtual bool threadInitialize();
         virtual bool threadExecute();
         virtual bool threadShutdown();
-
 
         int    _socket;
         int    _sd; //socket descriptor
@@ -56,14 +52,30 @@ namespace Jetracer {
         bool sendBuffer(const char* buff, const int size);
         bool receiveBuffer(char* buff, const int size);
         void split(const std::string &s, char delim, std::vector<std::string> &elems);
-        void setPwmSpeed();
-        void setPwmSteering();
         std::vector<std::string> splitMessage(const std::string &s, char delim);
         context_t * _ctx;
-        videoStreamThread * jetracer_video_stream;
-        PCA9685 *pca9685;
 
     }; // end of class
+
+    class SpeedUpdateEvent: public BaseEvent {
+    public:
+        int speed;
+    }
+
+    class SteeringUpdateEvent: public BaseEvent {
+    public:
+        int steering;
+    }
+
+    class VideoStreamingEvent: public BaseEvent {
+    public:
+        bool do_stream;
+    }
+
+    typedef std::shared_ptr<VideoFrameEvent> pSpeedUpdateEvent; // p - means pointer
+    typedef std::shared_ptr<VideoFrameEvent> pSteeringUpdateEvent; // p - means pointer
+    typedef std::shared_ptr<VideoFrameEvent> pVideoStreamingEvent; // p - means pointer
+
 } // end of namespace Jetracer
 
 #endif // JETRACER_COMMUNICATION_THREAD_H

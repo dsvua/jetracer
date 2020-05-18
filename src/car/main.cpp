@@ -63,10 +63,9 @@ int main(int argc, char * argv[]) {
     // write_configuration(inputSettingsFile, ctx);
     std::cout << "listening on port: " << ctx.listen_port << std::endl;
 
-    ctx.depth_queue = new rs2::frame_queue(CAPACITY);
-    ctx.left_ir_queue = new rs2::frame_queue(CAPACITY);
+    // ctx.depth_queue = new rs2::frame_queue(CAPACITY);
+    // ctx.left_ir_queue = new rs2::frame_queue(CAPACITY);
     ctx.stream_video = new Jetracer::Ordered<bool>(false); // do not stream video by default
-    // ctx.stream_video->set(false);
 
     /* Register a shuwdown handler to ensure
        a clean shutdown if user types <ctrl+c> */
@@ -76,24 +75,11 @@ int main(int argc, char * argv[]) {
     sig_action.sa_flags = 0;
     sigaction(SIGINT, &sig_action, NULL);
 
+    // start main events loop
+    Jetracer::MainEventsLoopThread jetracer_events_loop(&ctx);
+    jetracer_events_loop.initialize();
+    jetracer_events_loop.waitRunning(ctx.wait_for_thread);
 
-    // start camera capturing
-    Jetracer::realsenseD435iThread jetracer_depth_camera(&ctx);
-    jetracer_depth_camera.initialize();
-    jetracer_depth_camera.waitRunning(ctx.wait_for_thread);
-    
-    cout << "jetson_camera_intrinsics.model: " << ctx.jetson_camera_intrinsics.model << endl;
-
-    // start commucation thread
-    Jetracer::communicationThread jetracer_communication_thread(&ctx);
-    jetracer_communication_thread.initialize();
-    jetracer_communication_thread.waitRunning(ctx.wait_for_thread);
-
-
-    // start image processing pipeline
-    // Jetracer::imagePipelineThread jetracer_image_pipeline(&ctx);
-    // jetracer_image_pipeline.initialize();
-    // jetracer_image_pipeline.waitRunning(ctx.wait_for_thread);
 
     std::cout << "entering infinite loop" << std::endl;
     while(!quit){
@@ -103,9 +89,7 @@ int main(int argc, char * argv[]) {
     // caught CTRL+C
     std::cout << "caught CTRL+C" << std::endl;
     std::cout << "Closing thread: jetracer_communication_thread" << std::endl;
-    jetracer_communication_thread.shutdown();
-    std::cout << "Closing thread: jetracer_depth_camera" << std::endl;
-    jetracer_depth_camera.shutdown();
+    jetracer_events_loop.shutdown();
 }
 
 // image ignore area: 60px on left and 50px on bottom. 0,0 is top left corner

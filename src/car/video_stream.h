@@ -2,16 +2,17 @@
 #define JETRACER_VIDEO_STREAM_THREAD_H
 
 #include <opencv2/videoio.hpp>
-#include "Thread.h"
+#include "EventsThread.h"
 #include "constants.h"
 #include "types.h"
+#include "realsense_camera.h"
 #include <fmt/format.h>
 #include <iostream>
 #include <librealsense2/rs.hpp>
 
 namespace Jetracer {
 
-    class videoStreamThread : public Thread {
+    class videoStreamThread : public EventsThread {
     public:
         explicit videoStreamThread(context_t * ctx)
                                     : _ctx(ctx)
@@ -23,10 +24,11 @@ namespace Jetracer {
         // rs2::frame_queue right_ir_queue(CAPACITY);
     private:
         virtual bool threadInitialize();
-        virtual bool threadExecute();
         virtual bool threadShutdown();
+        virtual bool processEvent(pEvent event);
         context_t * _ctx;
         cv::VideoWriter video_writer;
+        EventType eventsToSubscribe[] = {event_stop_thread, event_new_ir_frame};
 
     }; // end of class
 } // end of namespace Jetracer

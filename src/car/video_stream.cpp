@@ -23,26 +23,52 @@ namespace Jetracer {
             std::cerr << "Could not open the output video file for write\n";
             return false;
         }
+
+        // callback for pushEvent
+        auto callbackPushEvent = [this](pEvent event){
+            this->pushEvent(event);
+        }
+
+        // subscribe to events - minimum to shutdown event
+        for (auto& event : eventsToSubscribe) {
+            _ctx->subscribeForEvent(event, m_threadID, callbackPushEvent);
+        }
+
         return true;
     }
     
-    bool videoStreamThread::threadExecute() {
-        while (!m_doShutdown){
-            video_frame tframe = frame{};
-            if (_ctx->left_ir_queue->poll_for_frame(&tframe))
-            {
-                // std::cout << "Frame count: " << tframe.get_frame_metadata(RS2_FRAME_METADATA_FRAME_COUNTER) << std::endl;
-                int image_size;
-                Mat image = Mat(cv::Size(_ctx->cam_w, _ctx->cam_h), CV_8UC1, (void*)tframe.get_data());
-                video_writer << image;
-            }
+    // bool videoStreamThread::threadExecute() {
+    //     while (!m_doShutdown){
+    //         video_frame tframe = frame{};
+    //         if (_ctx->left_ir_queue->poll_for_frame(&tframe))
+    //         {
+    //             // std::cout << "Frame count: " << tframe.get_frame_metadata(RS2_FRAME_METADATA_FRAME_COUNTER) << std::endl;
+    //             int image_size;
+    //             Mat image = Mat(cv::Size(_ctx->cam_w, _ctx->cam_h), CV_8UC1, (void*)tframe.get_data());
+    //             video_writer << image;
+    //         }
+    //     }
+    //     std::cout << "Stopping videoStreamThread" << std::endl;
+    //     // video_writer.close();
+    //     return true;
+    // }
+
+    bool videoStreamThread::processEvents(pEvent event) {
+
+        if (event->event_type != event_stop_thread) {
+            // std::cout << "Frame count: " << tframe.get_frame_metadata(RS2_FRAME_METADATA_FRAME_COUNTER) << std::endl;
+            Mat image = Mat(cv::Size(_ctx->cam_w, _ctx->cam_h), CV_8UC1, (void*)event.video_frame.get_data());
+            video_writer << image;
+        } else {
+            shutdown();            
         }
-        std::cout << "Stopping videoStreamThread" << std::endl;
-        // video_writer.close();
         return true;
     }
 
     bool videoStreamThread::threadShutdown() {
+        for (auto& event : eventsToSubscribe) {
+            _ctx->unSubscribeFromEvent(event, m_threadID);
+        }
         return true;
     }
 

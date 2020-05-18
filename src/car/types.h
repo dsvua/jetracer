@@ -26,8 +26,6 @@ namespace Jetracer {
         int max_obstacle_height = 250;  // ignore everything higher then 25cm
                                         // as car is not that tall
 
-        rs2::frame_queue* depth_queue;
-        rs2::frame_queue* left_ir_queue;
         rs2_intrinsics jetson_camera_intrinsics;
 
         Ordered<bool>* stream_video; // by default do not stream video
@@ -44,8 +42,15 @@ namespace Jetracer {
 
     enum class EventType {
         event_new_ir_frame,
+        event_stream_ir_frame_on,
+        event_stream_ir_frame_off,
         event_new_depth_frame,
-        event_new_net_command,
+        event_new_gyro_frame,
+        event_new_accel_frame,
+        event_speed_update,
+        event_steering_update,
+        event_video_streaming_update,
+
         event_stop_thread,
     }
 
@@ -55,6 +60,7 @@ namespace Jetracer {
     }
 
     typedef std::shared_ptr<BaseEvent> pEvent; // p - means pointer
+
 
 } // namespace Jetracer
 

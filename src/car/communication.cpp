@@ -5,21 +5,6 @@ using namespace std;
 namespace Jetracer {
     bool communicationThread::threadInitialize() {
 
-        // Initialize the PWM board
-        pca9685 = new PCA9685() ;
-        int err = pca9685->openPCA9685();
-        if (err < 0){
-            printf("Error: %d", pca9685->error);
-        }
-        printf("PCA9685 Device Address: 0x%02X\n",pca9685->kI2CAddress);
-        pca9685->setAllPWM(0,0);
-        pca9685->reset();
-        pca9685->setPWMFrequency(50);
-        // Set the PWM to "neutral" (1.5ms)
-        sleep(1);
-        pca9685->setPWM(ESC_CHANNEL,0,ESC_PWM_NEUTRAL);
-        _speed = 0;
-
         // start listening on given network port
         struct sockaddr_in addr;
         _socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -56,12 +41,10 @@ namespace Jetracer {
             printf("Creating connection\n");
             getIncomingConnection();
 
-            printf("Starting video\n");
-            // printf("/usr/bin/gst-launch-1.0 rpicamsrc bitrate=1000000" 
-            //         " rotation=180 ! video/x-h264,width=640,height=480 "
-            //         "! h264parse ! queue ! rtph264pay config-interval=1"
-            //         " pt=96 ! udpsink host=192.168.192.13 port=9000\n");
-            startVideo();
+            pVideoStreamingEvent video_event = make_shared<VideoStreamingEvent>();
+            video_event->event_type = event_video_streaming_update;
+            video_event->do_stream = true;
+            _ctx->pushEvent(video_event);
 
             while(!m_doShutdown && readMessage()){
                 printf("Getting message\n");
@@ -71,11 +54,16 @@ namespace Jetracer {
                 printf("Message:%s\n", message.c_str());
                
             }
-            stopVideo();
+            pVideoStreamingEvent video_event = make_shared<VideoStreamingEvent>();
+            video_event->event_type = event_video_streaming_update;
+            video_event->do_stream = false;
+            _ctx->pushEvent(video_event);
+
         }
-        cout << "Stopping video" << endl;
-        stopVideo();
-        cout << "Video is stopped in communicationThread" << endl;
+        pVideoStreamingEvent video_event = make_shared<VideoStreamingEvent>();
+        video_event->event_type = event_video_streaming_update;
+        video_event->do_stream = false;
+        _ctx->pushEvent(video_event);
         return true;
     }
 
@@ -193,61 +181,55 @@ namespace Jetracer {
         //value = atoi(cmessage);
         string command = splitted_message[0];
         cout << message << "|" << splitted_message[0] << " " << value << "|" << splitted_message[1] << endl;
-        if (command == "Reset"){
-            pca9685->reset();
-        } else if (command == "Forward"){
+        if (command == "Forward"){
             value = 1;
             _speed += value;
             if (_speed > 100){
                 _speed = 100;
             }
-            setPwmSpeed();
+
+            pSpeedUpdateEvent speed_event = make_shared<SpeedUpdateEvent>();
+            speed_event->event_type = event_speed_update;
+            speed_event->speed = _speed;
+            _ctx->pushEvent(speed_event);
+
         } else if (command == "Backward"){
             value = 1;
             _speed -= value;
             if (_speed < -100) {
                  _speed = -100;
             }
-            setPwmSpeed();
+
+            pSpeedUpdateEvent speed_event = make_shared<SpeedUpdateEvent>();
+            speed_event->event_type = event_speed_update;
+            speed_event->speed = _speed;
+            _ctx->pushEvent(speed_event);
+
         } else if (command == "Right"){
             _steering = value;
             if (_steering > 100) {
                 _steering = 100;
             }
-            setPwmSteering();
+
+            pSteeringUpdateEvent steering_event = make_shared<SteeringUpdateEvent>();
+            steering_event->event_type = event_steering_update;
+            steering_event->steering = _steering;
+            _ctx->pushEvent(steering_event);
+
         } else if (command == "Left"){
             _steering = 0 - value;
             if (_steering < -100) {
                 _steering = -100;
             }
-            setPwmSteering();
+
+            pSteeringUpdateEvent steering_event = make_shared<SteeringUpdateEvent>();
+            steering_event->event_type = event_steering_update;
+            steering_event->steering = _steering;
+            _ctx->pushEvent(steering_event);
+
         }
         //delete cmessage;
 
-    }
-
-    void communicationThread::setPwmSpeed(){
-        int pwmSpeed = 0;
-        if (_speed > 0 ){
-            pwmSpeed = ESC_PWM_NEUTRAL + ESC_FORWARD_RANGE * _speed / 100;
-        } else {
-            pwmSpeed = ESC_PWM_NEUTRAL + ESC_REVERSE_RANGE * _speed / 100;
-        }
-        std::cout << "setPwmSpeed: " << pwmSpeed << std::endl;
-        pca9685->setPWM(ESC_CHANNEL,0,pwmSpeed);
-    }
-
-    void communicationThread::setPwmSteering(){
-        int pwmSteering = 0;
-        if (_steering > 0 ){
-            pwmSteering = SERVO_PWM_NEUTRAL + SERVO_RIGHT_RANGE * _steering / 100;
-            // pwmSteering = 4096/2 + (4096/2) * _steering / 100;
-        } else {
-            pwmSteering = SERVO_PWM_NEUTRAL + SERVO_LEFT_RANGE * _steering / 100;
-            // pwmSteering = 4096/2 + (4096/2) * _steering / 100;
-        }
-        std::cout << "setPwmSteering: " << pwmSteering << std::endl;
-        pca9685->setPWM(STEERING_CHANNEL,0,pwmSteering);
     }
 
     void communicationThread::split(const string &s, char delim, vector<string> &elems){
@@ -263,19 +245,6 @@ namespace Jetracer {
         vector<string> elems;
         split(s, delim, elems);
         return elems;
-    }
-
-    void communicationThread::startVideo(){
-        _ctx->stream_video->set(true);
-        // std::cout << "in communication _ctx->stream_video->get(): " << _ctx->stream_video->get() << std::endl;
-        jetracer_video_stream = new videoStreamThread(_ctx);
-        jetracer_video_stream->initialize();
-        jetracer_video_stream->waitRunning();
-    }
-
-    void communicationThread::stopVideo(){
-        jetracer_video_stream->shutdown();
-        _ctx->stream_video->set(false);
     }
 
     bool communicationThread::threadShutdown(){
