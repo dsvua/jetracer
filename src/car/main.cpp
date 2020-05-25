@@ -66,8 +66,9 @@ int main(int argc, char * argv[]) {
     // ctx.depth_queue = new rs2::frame_queue(CAPACITY);
     // ctx.left_ir_queue = new rs2::frame_queue(CAPACITY);
     ctx.stream_video = new Jetracer::Ordered<bool>(false); // do not stream video by default
+    ctx.self_drive = new Jetracer::Ordered<bool>(false); // do not self drive by default
 
-    /* Register a shuwdown handler to ensure
+    /* Register a shutdown handler to ensure
        a clean shutdown if user types <ctrl+c> */
     struct sigaction sig_action;
     sig_action.sa_handler = signal_handle;
@@ -88,11 +89,9 @@ int main(int argc, char * argv[]) {
 
     // caught CTRL+C
     std::cout << "caught CTRL+C" << std::endl;
-    std::cout << "Closing thread: jetracer_communication_thread" << std::endl;
+    std::cout << "Closing thread: jetracer_events_loop" << std::endl;
     jetracer_events_loop.shutdown();
 }
-
-// image ignore area: 60px on left and 50px on bottom. 0,0 is top left corner
 
 // plane formula: ax + by + c = z
 // fit plane to points: 

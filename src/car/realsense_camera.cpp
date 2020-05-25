@@ -67,8 +67,8 @@ namespace Jetracer {
         _ctx->jetson_camera_intrinsics = intrinsics;
 
         // subscribe to events - minimum to shutdown event
-        for (auto& event : eventsToSubscribe) {
-            _ctx->subscribeForEvent(event, m_threadID, callbackPushEvent);
+        for (auto& event_type : eventsToSubscribe) {
+            _ctx->subscribeForEvent(event_type, m_threadID, callbackPushEvent);
         }
 
         std::cout << "Camera thread is initialized" << std::endl;
@@ -102,8 +102,8 @@ namespace Jetracer {
 
     bool realsenseD435iThread::threadShutdown() {
         // unsubscribe from events
-        for (auto& event : eventsToSubscribe) {
-            _ctx->unSubscribeFromEvent(event, m_threadID);
+        for (auto& event_type : eventsToSubscribe) {
+            _ctx->unSubscribeFromEvent(event_type, m_threadID);
         }
         return true;
     }

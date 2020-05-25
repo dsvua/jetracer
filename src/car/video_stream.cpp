@@ -30,8 +30,8 @@ namespace Jetracer {
         }
 
         // subscribe to events - minimum to shutdown event
-        for (auto& event : eventsToSubscribe) {
-            _ctx->subscribeForEvent(event, m_threadID, callbackPushEvent);
+        for (auto& event_type : eventsToSubscribe) {
+            _ctx->subscribeForEvent(event_type, m_threadID, callbackPushEvent);
         }
 
         return true;
@@ -66,8 +66,8 @@ namespace Jetracer {
     }
 
     bool videoStreamThread::threadShutdown() {
-        for (auto& event : eventsToSubscribe) {
-            _ctx->unSubscribeFromEvent(event, m_threadID);
+        for (auto& event_type : eventsToSubscribe) {
+            _ctx->unSubscribeFromEvent(event_type, m_threadID);
         }
         return true;
     }

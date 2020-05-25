@@ -45,6 +45,9 @@ namespace Jetracer {
 
 
     bool MainEventsLoopThread::threadShutdown() {
+        jetracer_video_stream->shutdown();
+        jetracer_communication->shutdown();
+        jetracer_servo_control->shutdown();
         return true;
     }
 
