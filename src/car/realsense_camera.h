@@ -31,22 +31,22 @@ namespace Jetracer {
     class VideoFrameEvent: public BaseEvent {
     public:
         rs2::video_frame video_frame = rs2::frame{};
-    }
+    };
 
     class DepthFrameEvent: public BaseEvent {
     public:
         rs2::depth_frame depth_frame = rs2::frame{};
-    }
+    };
 
     class GyroFrameEvent: public BaseEvent {
     public:
         rs2::motion_frame motion_frame = rs2::frame{};
-    }
+    };
 
     class AccelFrameEvent: public BaseEvent {
     public:
         rs2::motion_frame motion_frame = rs2::frame{};
-    }
+    };
 
     typedef std::shared_ptr<VideoFrameEvent> pVideoFrameEvent; // p - means pointer
     typedef std::shared_ptr<DepthFrameEvent> pDepthFrameEvent; // p - means pointer

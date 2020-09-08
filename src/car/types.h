@@ -53,12 +53,12 @@ namespace Jetracer {
         event_video_streaming_update,
 
         event_stop_thread,
-    }
+    };
 
     class BaseEvent {
     public:
         EventType event_type;
-    }
+    };
 
     typedef std::shared_ptr<BaseEvent> pEvent; // p - means pointer
 
